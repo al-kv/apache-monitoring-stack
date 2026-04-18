@@ -1,0 +1,19 @@
+# Данные runtime
+data/
+grafana/data/
+promtail/positions/
+
+# Файлы блокировок
+*.lock
+
+# Локальные настройки и секреты
+.env
+.env.local
+
+# Тестовые файлы
+test-logs/
+
+# Временные файлы редакторов
+*.swp
+*.swo
+*~

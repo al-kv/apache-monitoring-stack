@@ -1,0 +1,70 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /positions/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # ========== Обычные access.log файлы ==========
+  - job_name: apache_access_logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: apache_access
+          __path__: /var/log/nginx/*.access.log
+    pipeline_stages:
+      - drop:
+          source: "line"
+          expression: '^(91\.236\.238\.148|46\.148\.235\.25)\s'
+      - regex:
+          source: filename
+          expression: '^.*/(?P<site>[^/]+)\.access\.log$'
+      - regex:
+          expression: '^(?P<ip>\S+) \S+ \S+ \[(?P<timestamp>[^\]]+)\] "(?P<method>\S+) (?P<request>\S+) \S+" (?P<status>\d+) (?P<bytes>\d+|-) "(?P<referer>[^"]*)" "(?P<user_agent>[^"]*)"'
+      - timestamp:
+          source: timestamp
+          format: "02/Jan/2006:15:04:05 -0700"
+      - labels:
+          site:
+          status:
+          method:
+          ip:
+      - regex:
+          source: request
+          expression: '^(?P<path>[^?]*)(\?(?P<query>.*))?$'
+
+  # ========== Сжатые access.log.*.gz файлы ==========
+  - job_name: apache_access_gz
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: apache_access
+          __path__: /var/log/nginx/*.access.log.*.gz
+    pipeline_stages:
+      - decompress:
+          format: gz
+      - drop:
+          source: "line"
+          expression: '^(91\.236\.238\.148|46\.148\.235\.25)\s'
+      - regex:
+          source: filename
+          expression: '^.*/(?P<site>[^/]+)\.access\.log\..*\.gz$'
+      - regex:
+          expression: '^(?P<ip>\S+) \S+ \S+ \[(?P<timestamp>[^\]]+)\] "(?P<method>\S+) (?P<request>\S+) \S+" (?P<status>\d+) (?P<bytes>\d+|-) "(?P<referer>[^"]*)" "(?P<user_agent>[^"]*)"'
+      - timestamp:
+          source: timestamp
+          format: "02/Jan/2006:15:04:05 -0700"
+      - labels:
+          site:
+          status:
+          method:
+          ip:
+      - regex:
+          source: request
+          expression: '^(?P<path>[^?]*)(\?(?P<query>.*))?$'

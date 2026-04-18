@@ -1,0 +1,204 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 40,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 20,
+        "w": 13,
+        "x": 0,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "{job=\"apache_access\"} | regexp `^(?P<ip>\\S+)` | ip =~ \"${selected_ip}\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "📋 Логи запросов",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "color-background"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 20,
+        "w": 11,
+        "x": 13,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.4.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum by (ip) (\r\n  count_over_time(\r\n    {job=\"apache_access\"} \r\n    | regexp `^(?P<ip>\\S+)`\r\n    | ip =~ \"${selected_ip}\"\r\n    [5m]\r\n  )\r\n) / 300",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "📈 RPS (запросов в секунду)",
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "91.236.238.148",
+          "value": "91.236.238.148"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "selected_ip",
+        "options": [
+          {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": true,
+            "text": "91.236.238.148",
+            "value": "91.236.238.148"
+          },
+          {
+            "selected": false,
+            "text": "46.148.235.25",
+            "value": "46.148.235.25"
+          },
+          {
+            "selected": false,
+            "text": "66.249.75.133",
+            "value": "66.249.75.133"
+          },
+          {
+            "selected": false,
+            "text": "20.151.218.28",
+            "value": "20.151.218.28"
+          },
+          {
+            "selected": false,
+            "text": "89.187.168.47",
+            "value": "89.187.168.47"
+          },
+          {
+            "selected": false,
+            "text": "45.133.5.45",
+            "value": "45.133.5.45"
+          },
+          {
+            "selected": false,
+            "text": "209.87.169.126",
+            "value": "209.87.169.126"
+          }
+        ],
+        "query": "91.236.238.148, 46.148.235.25, 66.249.75.133, 20.151.218.28, 89.187.168.47, 45.133.5.45, 209.87.169.126",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Детализация по IP",
+  "uid": "afiw0jl3l0s8wd",
+  "version": 13,
+  "weekStart": ""
+}

@@ -1,0 +1,21 @@
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: email_admin
+    receivers:
+      - uid: email_uid_1
+        type: email
+        settings:
+          addresses: info@euroavia.ru
+          singleEmail: false
+
+  # Опционально: Telegram (раскомментируй, если клиент захочет)
+  # - orgId: 1
+  #   name: telegram_alerts
+  #   receivers:
+  #     - uid: tg_uid_1
+  #       type: telegram
+  #       settings:
+  #         bot_token: "ТОКЕН_БОТА"
+  #         chat_id: "ID_ЧАТА"
+  #       disableResolveMessage: true
