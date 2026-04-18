@@ -26,7 +26,7 @@ Apache Monitoring Stack
 
 1. Убедитесь, что установлены Docker и Docker Compose.
 2. Склонируйте репозиторий:
-   git clone https://github.com/yourusername/apache-monitoring-stack.git
+   git clone https://github.com/al-kv/apache-monitoring-stack.git
    cd apache-monitoring-stack
 3. Создайте файл .env на основе примера и задайте пароли:
    cp .env.example .env
