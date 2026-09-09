@@ -5,6 +5,13 @@ Apache Monitoring Stack
 Полноценный мониторинг веб-сервера Apache/Nginx на базе Grafana Loki, Promtail и Grafana. Все настройки описаны в коде и разворачиваются автоматически.
 
 Возможности
+## Скриншоты дашбордов
+
+![Обзор Apache](Dashboard%20Обзор%20Apache.png)
+![Ошибки Apache](Dashboard%20Ошибки%20Apache.png)
+![Угрозы](Dashboard%20Угроза.png)
+![Панель](Dashboard%20Панель.png)
+![Трафик](Dashboard%20Трафик.png)
 
 - Сбор и анализ access-логов в реальном времени
 - 6 преднастроенных дашбордов:
