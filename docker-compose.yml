@@ -19,10 +19,13 @@ services:
       start_period: 30s
     logging:
       driver: json-file
-      options: { max-size: "10m", max-file: "3" }
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
-        limits: { memory: 1G }
+        limits:
+          memory: 1G
     networks:
       - monitoring
 
@@ -43,10 +46,13 @@ services:
         condition: service_healthy
     logging:
       driver: json-file
-      options: { max-size: "10m", max-file: "3" }
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
-        limits: { memory: 256M }
+        limits:
+          memory: 256M
     networks:
       - monitoring
 
@@ -93,7 +99,8 @@ services:
         max-file: "3"
     deploy:
       resources:
-        limits: { memory: 512M }
+        limits:
+          memory: 512M
     networks:
       - monitoring
 

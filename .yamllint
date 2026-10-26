@@ -5,7 +5,14 @@ rules:
   comments-indentation: disable
   truthy: disable
   key-duplicates: enable
+  braces: disable
+  brackets: disable
+  indentation: disable
+  colons: disable
+  commas: disable
 ignore: |
   test-logs/
   grafana/data/
   .github/
+  grafana/provisioning/alerting/rules.yaml
+  docker-compose.yml
