@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare .env for compose validation
+        run: |
+          cp .env.example .env
+          sed -i 's/^GF_ADMIN_PASSWORD=.*/GF_ADMIN_PASSWORD=ci-test/' .env
+
+      - name: Validate docker-compose
+        run: docker compose config -q
+
+      - name: Install linters
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq yamllint shellcheck
+
+      - name: yamllint
+        run: yamllint -c .yamllint grafana loki promtail .github docker-compose.yml
+
+      - name: JSON validation
+        run: |
+          for f in grafana/provisioning/dashboards/*.json; do
+            python -m json.tool "$f" > /dev/null
+          done
+
+      - name: shellcheck
+        run: shellcheck promtail/docker-entrypoint.sh

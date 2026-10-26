@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 36,
+  "id": null,
   "links": [],
   "panels": [
     {
@@ -143,7 +143,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "(sum(count_over_time({job=\"apache_access\"} |~ \"5[0-9]{2}\" [$__range])) / sum(count_over_time({job=\"apache_access\"}[$__range]))) * 100",
+          "expr": "(sum(count_over_time({job=\"apache_access\", status=~\"5..\"} [$__range])) / sum(count_over_time({job=\"apache_access\"}[$__range]))) * 100",
           "refId": "A"
         }
       ],
@@ -211,7 +211,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "(sum(count_over_time({job=\"apache_access\"} |~ \"4[0-9]{2}\" [$__range])) / sum(count_over_time({job=\"apache_access\"}[$__range]))) * 100",
+          "expr": "(sum(count_over_time({job=\"apache_access\", status=~\"4..\"} [$__range])) / sum(count_over_time({job=\"apache_access\"}[$__range]))) * 100",
           "refId": "A"
         }
       ],
@@ -506,7 +506,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(10,\r\n  sum by (ip) (\r\n    count_over_time(\r\n      {job=\"apache_access\"} \r\n      | regexp `^(?P<ip>\\S+)` \r\n      | label_format ip=`{{.ip}}`\r\n      [24h]\r\n    )\r\n  )\r\n)",
+          "expr": "topk(10,\r\n  sum by (ip) (\r\n    count_over_time(\r\n      {job=\"apache_access\"} \r\n      | regexp `^(?P<ip>\\S+)`\r\n      [24h]\r\n    )\r\n  )\r\n)",
           "queryType": "instant",
           "refId": "A"
         }

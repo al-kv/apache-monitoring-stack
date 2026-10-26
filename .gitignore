@@ -1,4 +1,26 @@
-# Данные runtime
+# Runtime data
+data/
+grafana/data/
+promtail/positions/
+
+# Backups
+backup/
+*.tar.gz
+
+# Locks
+*.lock
+
+# Secrets
+.env
+.env.local
+
+# Test data
+test-logs/
+
+# Editor temp
+*.swp
+*.swo
+*~# Данные runtime
 data/
 grafana/data/
 promtail/positions/

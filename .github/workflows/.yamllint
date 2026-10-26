@@ -1,0 +1,10 @@
+extends: default
+rules:
+  line-length: { max: 200 }
+  truthy: { allowed-values: ['true', 'false', 'on', 'off'] }
+  document-start: disable
+  comments-indentation: disable
+  key-duplicates: enable
+ignore: |
+  test-logs/
+  grafana/data/

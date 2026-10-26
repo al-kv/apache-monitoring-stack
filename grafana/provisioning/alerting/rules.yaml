@@ -1,2 +1,99 @@
 apiVersion: 1
-groups: []
+groups:
+  - orgId: 1
+    name: apache_alerts
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: high_5xx_rate
+        title: "[Apache] Всплеск ошибок 5xx"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: loki
+            model:
+              editorMode: code
+              expr: 'sum by (site) (rate({job="apache_access", status=~"5.."}[5m]))'
+              instant: false
+              queryType: range
+              refId: A
+          - refId: B
+            relativeTimeRange: { from: 600, to: 300 }
+            datasourceUid: loki
+            model:
+              editorMode: code
+              expr: 'sum by (site) (rate({job="apache_access", status=~"5.."}[5m] offset 5m))'
+              instant: false
+              queryType: range
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: '$A > 2 * $B'
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        isPaused: false
+        annotations:
+          summary: '5xx spike on {{ $labels.site }}'
+          description: 'Current rate: {{ $values.A }} req/s (was {{ $values.B }} 5m ago)'
+        labels:
+          severity: critical
+
+      - uid: high_traffic_single_ip
+        title: "[Apache] High traffic from single IP"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: loki
+            model:
+              editorMode: code
+              expr: 'topk(20, sum by (ip) (rate({job="apache_access"} | regexp `^(?P<ip>\S+)` [5m])))'
+              instant: false
+              queryType: range
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: '$A > 200'
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        isPaused: false
+        annotations:
+          summary: 'IP {{ $labels.ip }} > 200 req/s ({{ $values.A }})'
+          description: 'Possible DDoS or scraping.'
+        labels:
+          severity: warning
+
+      - uid: sql_injection_attempt
+        title: "[Apache] Possible attack attempt"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: loki
+            model:
+              editorMode: code
+              expr: 'topk(50, sum by (ip) (count_over_time({job="apache_access"} | regexp `^(?P<ip>\S+)` |~ `(?i)(union|select|insert|delete|drop|exec|script|alert|\bOR\b.*=)` [10m])))'
+              instant: false
+              queryType: range
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: '$A >= 15'
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        isPaused: false
+        annotations:
+          summary: 'IP {{ $labels.ip }} — {{ $values.A }} suspicious requests in 10m'
+          description: 'Possible SQL injection / attack attempts detected.'
+        labels:
+          severity: warning

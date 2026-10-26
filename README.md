@@ -36,36 +36,32 @@
 1. Убедитесь, что установлены Docker и Docker Compose.
 2. Склонируйте репозиторий:
 
-    ```bash
     git clone https://github.com/al-kv/apache-monitoring-stack.git
     cd apache-monitoring-stack
-    ```
 
 3. Создайте файл `.env` на основе примера и задайте пароли:
 
-    ```bash
     cp .env.example .env
     nano .env
-    ```
 
 4. В файле `docker-compose.yml` укажите правильный путь к логам веб-сервера в секции `promtail.volumes` (по умолчанию `/var/www/www-root/data/logs`).
 5. Запустите стек:
 
-    ```bash
     docker compose up -d
-    ```
 
 6. Откройте Grafana по адресу `http://localhost:3000` (логин и пароль из `.env`).
 
 ## Структура проекта
 
-- `docker-compose.yml` – основной файл запуска
+- `docker-compose.yml` – основной файл запуска (healthcheck, лимиты ресурсов)
 - `loki/` – конфигурация Loki (хранение 30 дней)
-- `promtail/` – конфигурация Promtail, скрипт фильтрации IP, список исключений
+- `promtail/` – конфигурация Promtail (динамическое исключение IP через `exclude_ips.txt`)
 - `grafana/provisioning/` – автоматическая настройка Grafana:
   - `datasources/` – источник данных Loki
   - `dashboards/` – JSON-модели дашбордов
-  - `alerting/` – контактные точки и правила алертов
+  - `alerting/` – правила алертов (`rules.yaml`), маршрутизация (`policies.yaml`) и точки контакта
+- `scripts/` – вспомогательные скрипты (например, `fix-dashboards.py`)
+- `.github/workflows/ci.yml` – CI пайплайн (валидация конфигов)
 - `.env.example` – пример файла с переменными окружения
 
 ## Безопасность
@@ -80,6 +76,54 @@
 - Promtail 2.9.10 – сбор и отправка логов
 - Grafana 10.4.3 – визуализация и алертинг
 - Docker Compose – оркестрация контейнеров
+
+## Known fixes (после ревью 2026-10)
+
+- ✅ Все datasource/dashboard/alerting **действительно** провижинятся (добавлен volume для `datasources/`).
+- ✅ `Loki` больше не публикуется наружу; healthcheck для Loki и Grafana, `depends_on: service_healthy`.
+- ✅ Алерты используют `status`-label (`{status=~"5.."}`) вместо дорогого line-фильтра.
+- ✅ Promtail хранит **только** низкокардинальные labels (`site`, `status`, `method`). `ip`, `path`, `bytes`, `user_agent` извлекаются через `| regexp` в LogQL.
+- ✅ Убрано high-cardinality поле `bytes` из labels (было «почти уникально на запрос»).
+- ✅ Email-адрес получателя алертов вынесен в `.env` (`GF_ALERT_EMAIL`).
+- ✅ Маршрутизация алертов — через `policies.yaml` (правильная схема Grafana 10.x).
+- ✅ `GF_SECURITY_ADMIN_PASSWORD` обязателен: без него `docker compose up` падает на старте.
+- ✅ CI валидирует `docker compose config`, YAML, JSON и shell-скрипты.
+
+## Backup & Restore (обязательно для прода)
+
+Критичные тома:
+
+| Том | Что внутри |
+|---|---|
+| `loki_data` | индексы и чанки логов (retention 30d) |
+| `grafana_data` | БД Grafana, пользователи, состояние алертов |
+| `promtail_positions` | позиции чтения логов (без него после рестарта — переиндексация) |
+
+Пример бэкапа (cron, ежедневно 03:00):
+
+    #!/usr/bin/env bash
+    set -euo pipefail
+    STAMP=$(date +%F_%H%M)
+    DEST=/var/backups/apache-monitoring
+    mkdir -p "$DEST"
+    docker run --rm \
+      -v apache-monitoring-stack_loki_data:/data:ro \
+      -v "$DEST":/backup \
+      alpine tar czf "/backup/loki_${STAMP}.tgz" -C /data .
+    docker run --rm \
+      -v apache-monitoring-stack_grafana_data:/data:ro \
+      -v "$DEST":/backup \
+      alpine tar czf "/backup/grafana_${STAMP}.tgz" -C /data .
+    find "$DEST" -name '*.tgz' -mtime +14 -delete
+
+### Проверено
+
+| Компонент | Версия | Статус |
+|---|---|---|
+| Grafana | 10.4.3 | ✅ |
+| Loki | 2.9.10 | ✅ |
+| Promtail | 2.9.10 | ✅ |
+| Docker Compose | v2.x | ✅ |
 
 ## Лицензия
 
