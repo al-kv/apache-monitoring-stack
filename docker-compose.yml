@@ -3,12 +3,29 @@ services:
     image: grafana/loki:2.9.10
     container_name: loki
     restart: unless-stopped
-    ports:
-      - "3100:3100"
+    # НЕ публикуем 3100 наружу: Promtail и Grafana ходят по internal-сети.
+    # Для локального дебага раскомментируй:
+    # ports:
+    #   - "127.0.0.1:3100:3100"
     volumes:
-      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml
-      - ./data/loki:/loki
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     networks:
       - monitoring
 
@@ -16,14 +33,26 @@ services:
     image: grafana/promtail:2.9.10
     container_name: promtail
     restart: unless-stopped
-    user: "0:0"
+    user: "0:0"   # root нужен для чтения /var/log/nginx под произвольными владельцами
+    entrypoint: ["/docker-entrypoint.sh"]
     volumes:
       - ./test-logs:/var/log/nginx:ro
-      - ./promtail/promtail-config.yaml:/etc/promtail/config.yml
-      - ./promtail/positions:/positions
-    command: -config.file=/etc/promtail/config.yml
+      - ./promtail/exclude_ips.txt:/etc/promtail/exclude_ips.txt:ro
+      - ./promtail/promtail-config.template.yaml:/etc/promtail/promtail-config.template.yaml:ro
+      - ./promtail/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+      - promtail_positions:/positions
     depends_on:
-      - loki
+      loki:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks:
       - monitoring
 
@@ -34,24 +63,51 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
-      - ./grafana/data:/var/lib/grafana
-      - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
-   environment:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    environment:
       - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:?GF_ADMIN_PASSWORD must be set in .env}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_SERVER_ROOT_URL=${GF_SERVER_ROOT_URL:-http://localhost:3000/}
+      - GF_SERVER_DOMAIN=${GF_SERVER_DOMAIN:-localhost}
       - GF_SMTP_ENABLED=${GF_SMTP_ENABLED:-false}
-      - GF_SMTP_HOST=${GF_SMTP_HOST}
-      - GF_SMTP_USER=${GF_SMTP_USER}
-      - GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD}
-      - GF_SMTP_FROM_ADDRESS=${GF_SMTP_FROM_ADDRESS}
-      - GF_SMTP_FROM_NAME=${GF_SMTP_FROM_NAME}
-      - GF_SMTP_SKIP_VERIFY=${GF_SMTP_SKIP_VERIFY}
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+      - GF_SMTP_HOST=${GF_SMTP_HOST:-}
+      - GF_SMTP_USER=${GF_SMTP_USER:-}
+      - GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD:-}
+      - GF_SMTP_FROM_ADDRESS=${GF_SMTP_FROM_ADDRESS:-}
+      - GF_SMTP_FROM_NAME=${GF_SMTP_FROM_NAME:-Grafana}
+      - GF_SMTP_SKIP_VERIFY=${GF_SMTP_SKIP_VERIFY:-true}
+      - GF_ALERT_EMAIL=${GF_ALERT_EMAIL:-alerts@example.com}
     depends_on:
-      - loki
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks:
       - monitoring
+
+volumes:
+  loki_data:
+  grafana_data:
+  promtail_positions:
 
 networks:
   monitoring:

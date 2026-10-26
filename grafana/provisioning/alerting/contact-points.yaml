@@ -6,16 +6,17 @@ contactPoints:
       - uid: email_uid_1
         type: email
         settings:
-          addresses: info@euroavia.ru
+          addresses: $__env{GF_ALERT_EMAIL}
           singleEmail: false
+        disableResolveMessage: false
 
-  # Опционально: Telegram (раскомментируй, если клиент захочет)
+  # Telegram — раскомментируй, если нужно
   # - orgId: 1
   #   name: telegram_alerts
   #   receivers:
   #     - uid: tg_uid_1
   #       type: telegram
   #       settings:
-  #         bot_token: "ТОКЕН_БОТА"
-  #         chat_id: "ID_ЧАТА"
+  #         bottoken: $__env{GF_TG_BOT_TOKEN}
+  #         chatid: $__env{GF_TG_CHAT_ID}
   #       disableResolveMessage: true

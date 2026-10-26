@@ -1,0 +1,19 @@
+apiVersion: 1
+policies:
+  - orgId: 1
+    receiver: email_admin
+    group_by:
+      - grafana_folder
+      - alertname
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      - receiver: email_admin
+        object_matchers:
+          - [severity, =, critical]
+        continue: false
+      - receiver: email_admin
+        object_matchers:
+          - [severity, =, warning]
+        continue: false

@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 35,
+  "id": null,
   "links": [],
   "panels": [
     {
@@ -360,7 +360,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (site) (sum_over_time({job=\"apache_access\"} | unwrap bytes | __error__=\"\" [$__range]))",
+          "expr": "sum by (site) (sum_over_time({job=\"apache_access\"} | regexp `\\s(?P<bytes>\\d+)(?:\\s|-)` | unwrap bytes | __error__=\"\" [$__range]))",
           "format": "table",
           "queryType": "instant",
           "refId": "B"
@@ -371,7 +371,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (site) (count_over_time({job=\"apache_access\"} |~ \"4[0-9]{2}\" [$__range]))",
+          "expr": "sum by (site) (count_over_time({job=\"apache_access\", status=~\"4..\"} [$__range]))",
           "format": "table",
           "queryType": "instant",
           "refId": "C"
@@ -382,7 +382,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (site) (count_over_time({job=\"apache_access\"} |~ \"5[0-9]{2}\" [$__range]))",
+          "expr": "sum by (site) (count_over_time({job=\"apache_access\", status=~\"5..\"} [$__range]))",
           "format": "table",
           "queryType": "instant",
           "refId": "D"

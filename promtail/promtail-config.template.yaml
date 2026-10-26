@@ -9,21 +9,21 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
+  # ========== Живые access.log ==========
   - job_name: apache_access_logs
     static_configs:
-      - targets:
-          - localhost
+      - targets: [localhost]
         labels:
           job: apache_access
           __path__: /var/log/nginx/*.access.log
 
     pipeline_stages:
-      # 1. Фильтрация доверенных IP (динамическая из EXCLUDE_PATTERN)
+      # 1. Drop доверенных IP (динамически из exclude_ips.txt через entrypoint)
       - drop:
           source: "line"
           expression: "${EXCLUDE_PATTERN}"
 
-      # 2. Имя сайта из имени файла
+      # 2. site из имени файла (<site>.access.log)
       - regex:
           source: filename
           expression: '^.*/(?P<site>[^/]+)\.access\.log$'
@@ -36,33 +36,24 @@ scrape_configs:
           source: timestamp
           format: "02/Jan/2006:15:04:05 -0700"
 
+      # Только низкокардинальные labels — остальное извлекаем в LogQL
       - labels:
-          ip:
-          method:
-          status:
           site:
-          user_agent:
-          bytes:
+          status:
+          method:
 
-      - regex:
-          source: request
-          expression: '^(?P<path>[^?]*)(\?(?P<query>.*))?$'
-
-      - labels:
-          path:
-    - job_name: apache_access_gz
+  # ========== Сжатые access.log.*.gz ==========
+  - job_name: apache_access_gz
     static_configs:
-      - targets:
-          - localhost
+      - targets: [localhost]
         labels:
           job: apache_access
           __path__: /var/log/nginx/*.access.log.*.gz
+
     pipeline_stages:
-      # Распаковка gzip
       - decompress:
           format: gz
 
-      # Далее все те же стадии, что и для обычных логов
       - drop:
           source: "line"
           expression: "${EXCLUDE_PATTERN}"
@@ -79,16 +70,6 @@ scrape_configs:
           format: "02/Jan/2006:15:04:05 -0700"
 
       - labels:
-          ip:
-          method:
-          status:
           site:
-          user_agent:
-          bytes:
-
-      - regex:
-          source: request
-          expression: '^(?P<path>[^?]*)(\?(?P<query>.*))?$'
-
-      - labels:
-          path:
+          status:
+          method:
